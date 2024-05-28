@@ -67,7 +67,7 @@ class Character:
         self.conditional_buffs = {}
         self.refreshing_buffs = {}
 
-    # Start of turn, remove any expired buffs and decrement remaining buff durations by 1
+    # Start of turn, decrement remaining buff durations by 1 and remove any expired buffs
     def turn_start(self):
         buffs = list(self.buffs.keys())
         for i in buffs:
@@ -78,11 +78,20 @@ class Character:
             else:
                 self.buffs[i]['turn'] -= 1
     
-    # End of turn, reset runway length
-    def turn_end(self):
-        self.basic_stats['until_turn'] = 10000
+    # End of turn
+    def turn_end(self, applied_buffs, ultimate = False):
 
-    # Calculate dynamic attack and speed based on three parts
+        # Reset runway length if not ultimate
+        if not ultimate:
+            self.basic_stats['until_turn'] = 10000
+        
+         # Remove one-time on-hit and conditional buffs
+        for i in applied_buffs:
+            for j in i['stats']:
+                self.basic_stats[j] -= i['stats'][j] * i['stack']
+        self.calc_stats()
+
+    # Calculate dynamic attack and speed based on three parts, and calculate refreshing buffs situation
     def calc_stats(self):
         self.basic_stats['attack'] = self.basic_stats['base_attack'] * self.basic_stats['attack_rate']/100 + self.basic_stats['fixed_attack']
         self.basic_stats['speed'] = self.basic_stats['base_speed'] * self.basic_stats['speed_rate']/100 + self.basic_stats['fixed_speed']
@@ -122,6 +131,8 @@ class Character:
 
     # Calculate damage
     def damage(self, target: Enemy, dmg_rate, fixed_dmg = 0, extra_dmg_boost = 0, attribute = 'attack') -> int:
+
+        # Apply on-hit and conditional buffs
         applied_buffs = []
         for i in self.on_hit:
             k = self.on_hit[i]
@@ -151,6 +162,7 @@ class Character:
                     self.buffs[p['name']]['turn'] = p['turn']
         self.calc_stats()
 
+        # Calculate damage
         dmg = dmg_rate / 100 * self.basic_stats[attribute] + fixed_dmg
         dmg *=  (self.basic_stats['dmg_boost'] + extra_dmg_boost) / 100
         defense = max(0, target.basic_stats['def'] * (100-target.basic_stats['def_red']-self.basic_stats['def_pen']) / 100)
@@ -164,18 +176,15 @@ class Character:
         dmg *= (1 + target.basic_stats['dmg_taken'] / 100)
         dmg *= (1 - target.basic_stats['toughness_resist'] / 100)
 
-        for i in applied_buffs:
-            for j in i['stats']:
-                self.basic_stats[j] -= i['stats'][j] * i['stack']
-        self.calc_stats()
-
-        return dmg
-    
+        return [dmg, applied_buffs]
+        
+    # Calculate damage expectation
     def expectation(self, conditional_rate = 0, conditional_crit_dmg = 0):
-        return 1 + (self.basic_stats['crit_rate'] + conditional_rate) * (self.basic_stats['crit_dmg'] + 100 + conditional_crit_dmg) / 10000
+        return 1 + (self.basic_stats['crit_rate'] + conditional_rate) * (self.basic_stats['crit_dmg'] + conditional_crit_dmg) / 10000
 
+    # Calculate crit damage
     def crit(self, conditional_crit_dmg = 0):
-        return 1 + (self.basic_stats['crit_dmg'] + 100 + conditional_crit_dmg) / 100
+        return 1 + (self.basic_stats['crit_dmg'] + conditional_crit_dmg) / 100
 
 class Seele(Character):
     def __init__(self, eidolons: int, lightcone: str, r: int, relic1, relic2, planar) -> None:
@@ -260,7 +269,7 @@ class Seele(Character):
 
         # Do damage to Enemy
         rate = 40 + 10 * self.basic_stats['basic_lvl']
-        dmg = self.damage(target, rate, extra_dmg_boost=self.basic_stats['basic_dmg'])
+        [dmg, applied_buffs] = self.damage(target, rate, extra_dmg_boost=self.basic_stats['basic_dmg'])
         dmg_E = dmg * self.expectation()
         dmg_crit = dmg * self.crit()
 
@@ -268,7 +277,7 @@ class Seele(Character):
         self.basic_stats['cur_energy'] += 20 * self.basic_stats['energy_regen_rate']
 
         # End turn
-        self.turn_end()
+        self.turn_end(applied_buffs)
 
         self.basic_stats['until_turn'] -= 2000 # Trace 3
         return [dmg, dmg_E, dmg_crit]
@@ -294,7 +303,7 @@ class Seele(Character):
         self.calc_stats()
         # Do damage to Enemy
         rate = 110 + 11 * self.basic_stats['skill_lvl']
-        dmg = self.damage(target, rate, extra_dmg_boost=self.basic_stats['skill_dmg'])
+        [dmg, applied_buffs] = self.damage(target, rate, extra_dmg_boost=self.basic_stats['skill_dmg'])
         dmg_E = dmg * self.expectation()
         dmg_crit = dmg * self.crit()
 
@@ -302,7 +311,7 @@ class Seele(Character):
         self.basic_stats['cur_energy'] += 30 * self.basic_stats['energy_regen_rate'] / 100
 
         # End turn
-        self.turn_end()
+        self.turn_end(applied_buffs)
         return [dmg, dmg_E, dmg_crit]
 
     def talent(self) -> None:
@@ -322,9 +331,11 @@ class Seele(Character):
 
         # Do damage to Enemy
         rate = 255 + 17 * self.basic_stats['ultimate_lvl']
-        dmg = self.damage(target, rate)
+        [dmg, applied_buffs] = self.damage(target, rate)
         dmg_E = dmg * self.expectation(conditional_crit_dmg=self.basic_stats['ultimate_crit_dmg'])
         dmg_crit = dmg * self.crit(conditional_crit_dmg=self.basic_stats['ultimate_crit_dmg'])
+
+        self.turn_end(applied_buffs, True)
         if self.info['eidolon'] >= 6: # Eidolon 6
             target.inflicts['on_hit'].append({'effect': self.eidolon_6, 'turn': 1})
         # Taking into consideration only single enemy so no extra turn code
