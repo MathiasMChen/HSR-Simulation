@@ -22,13 +22,13 @@ Taking into account critical damage, we yield two more damage values: damage whe
 
 **Output: an array, the first number is raw damage, the second is the expectation of damage, and the third is critical damage.**
 
-For instance, if the raw damage is 10000, crit_rate is 80%, and crit_dmg is 200%, our expectation would be 10000 * (1 + 80% * 200%) = 26000, and our critical damage would be 10000 * (1 + 200%) = 30000. Thus, our output is [10000, 26000, 30000].
+For instance, if the raw damage is 10000, crit_rate is 80%, and crit_dmg is 200%, our expectation would be 10000 * (1 + 80% * 200%) = 26000, and our critical damage would be 10000 * (1 + 200%) = 30000. Thus, our output is [10000, 26000, 30000]. Note that crit_rate exceeding 100% behaves the same as 100%, as both indicate there is 100% for the damage to be critical.
 
 ***Outcome: Calculate team damage against an arbitrarily selected in-game boss during a given time length, counted in turn. The enemy does not take action during its turn, ensuring every member of the player's team does not die or take debuff, but the turn count will collapse for debuffs on the enemy.***
 
 ### STEP I: Build a foundation database logistics, including base stats and abilities of characters, lightcones, and relics.
 
-Related files: character_buffs.py, relic.py, lightcones.py.
+Related files: character_buffs.py, character.py, relic.py, lightcones.py.
 
 character_buffs.py stores buffs that characters can inflict on themselves, allies, or enemies.
 
