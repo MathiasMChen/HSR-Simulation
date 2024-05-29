@@ -1,12 +1,10 @@
 class Enemy:
     def __init__(self) -> None:
         self.debuffs = {}
-        self.inflicts = {
-            'on_hit': []
-        }
+        self.on_hit = {}
         self.basic_stats = {
-            'remaining_hp': 50,
-            'max_hp': 100,
+            'remaining_hp': 100000,
+            'max_hp': 100000,
             'res': 0,
             'def_red': 0,
             'dmg_taken': 0,

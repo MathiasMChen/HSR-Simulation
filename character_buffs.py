@@ -15,24 +15,31 @@ class seele():
                     'max_turn': 0
                 }
 
-    def skill(self):
+
+
+    def skill(self, ally):
         return  {
                     'source': 'character',
                     'name': 'seele_skill',
                     'type': 'buff',
-                    'stats': {'speed_rate': 25},
+                    'stats': {
+                        'speed_rate': 25
+                    },
                     'stack': 1,
-                    'max_stack': 1,
+                    'max_stack': 2 if ally.info['eidolon'] >= 2 else 1, # Eidolon 2
                     'turn': 2,
                     'max_turn': 2
                 }
 
-    def talent(self, target):
+    def talent(self, ally):
         return  {
                     'source': 'character',
                     'name': 'seele_skill',
                     'type': 'buff',
-                    'stats': {'dmg_boost': 80 + 4 * (target.basic_stats['talent_lvl'] - 10)},
+                    'stats': {
+                        'dmg_boost': 80 + 4 * (ally.basic_stats['talent_lvl'] - 10), 
+                        'res_pen': 20 # Trace 2
+                    },
                     'stack': 1,
                     'turn': 1
                 }

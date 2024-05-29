@@ -32,12 +32,32 @@ class Seele(Character):
                 if eidolons >= 5: # Eidolon 5
                     self.basic_stats['ultimate_lvl'] += 2
                     self.basic_stats['basic_lvl'] += 1
-        
+
+    def move_logic(self, battle, target):
+        if battle.skill_point >= 1:
+            battle.skill_point -= 1
+            result = self.skill(target)
+        else:
+            battle.skill_point += 1
+            result = self.basic(target)
+        return result
+    
+    def ultimate_ready(self):
+        return self.basic_stats['cur_energy'] >= self.basic_stats['energy']
+
+    def ultimate_logic(self, battle, target):
+        return self.ultimate(target)
+    
+    def start_of_turn(self, battle, target):
+        return
+    
+    def end_of_turn(self, battle, target):
+        return
+
     def basic(self, target) -> int:
 
-        # Start turn, calculating buffs and stats
-        battle_simulation.turn_start(self)
-        self.calc_stats()
+        # Reminder
+        print('Seele casts basic!')
 
         # Do damage to Enemy
         rate = 40 + 10 * self.basic_stats['basic_lvl']
@@ -46,23 +66,23 @@ class Seele(Character):
         dmg_crit = dmg * crit(self)
 
         # Calculate energy
-        self.basic_stats['cur_energy'] += 20 * self.basic_stats['energy_regen_rate']
+        self.basic_stats['cur_energy'] += 20 * self.basic_stats['energy_regen_rate'] / 100
+        
+        self.basic_stats['until_turn'] -= 2000
 
-        # End turn
-        battle_simulation.turn_end(self,applied_buffs)
-
-        self.basic_stats['until_turn'] -= 2000 # Trace 3
-        return [dmg, dmg_E, dmg_crit]
+        return [[dmg, dmg_E, dmg_crit], applied_buffs]
     
     def skill(self, target) -> int:
+
+        # Reminder
+        print('Seele casts skill!')
 
         # Start turn, calculating buffs and stats
         battle_simulation.turn_start(self)
         self.calc_stats()
 
         # Add buffs
-        seele_skill = self.dummy.skill()
-        seele_skill['max_stack'] = 2 if self.info['eidolon'] >= 1 else 1 # Eidolon 2
+        seele_skill = self.dummy.skill(self)
         if 'seele_skill' not in self.buffs:
             self.buffs['seele_skill'] = seele_skill
             for i in seele_skill['stats']:
@@ -82,21 +102,21 @@ class Seele(Character):
         # Calculate energy
         self.basic_stats['cur_energy'] += 30 * self.basic_stats['energy_regen_rate'] / 100
 
-        # End turn
-        battle_simulation.turn_end(self,applied_buffs)
-        return [dmg, dmg_E, dmg_crit]
+        return [[dmg, dmg_E, dmg_crit], applied_buffs]
 
     def talent(self) -> None:
 
         # Add buffs
         seele_talent = self.dummy.talent(self)
         if 'seele_talent' not in self.buffs:
-            seele_talent['stats']['res_pen'] = 20 # Trace 2
             self.buffs['seele_talent'] = seele_talent
             for i in seele_talent['stats']:
                 self.basic_stats[i] += seele_talent['stats'][i] * seele_talent['stack']
 
     def ultimate(self, target) -> int:
+        
+        # Reminder
+        print('Seele casts ultimate!')
 
         # Add buffs
         self.talent()
@@ -107,12 +127,13 @@ class Seele(Character):
         dmg_E = dmg * expectation(self, conditional_crit_dmg=self.basic_stats['ultimate_crit_dmg'])
         dmg_crit = dmg * crit(self, conditional_crit_dmg=self.basic_stats['ultimate_crit_dmg'])
 
-        battle_simulation.turn_end(self,applied_buffs,True)
+        self.basic_stats['cur_energy'] = 5 * self.basic_stats['energy_regen_rate'] / 100
+
         if self.info['eidolon'] >= 6: # Eidolon 6
-            target.inflicts['on_hit'].append({'effect': self.eidolon_6, 'turn': 1})
+            target.on_hit['seele_eidolon_6'] = {'effect': self.eidolon_6, 'turn': 1}
         # Taking into consideration only single enemy so no extra turn code
         # Will add if considering multiple
-        return [dmg, dmg_E, dmg_crit]
+        return [[dmg, dmg_E, dmg_crit], applied_buffs]
     
     def eidolon_6(self, target) -> None:
         return 15

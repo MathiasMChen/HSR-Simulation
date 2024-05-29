@@ -1,6 +1,7 @@
 from enemy import Enemy
 import lightcones
 import relic
+import battle_simulation
 
 class Character:
     def __init__(self, name: str, eidolons: int, lightcone: str, r: int):
@@ -30,7 +31,7 @@ class Character:
             'break_effect': 100,
             'dmg_boost': 100,
             'effect_hit_rate': 0,
-            'energy': 0,
+            'energy': 110,
             'cur_energy': 0,
             'energy_regen_rate': 100,
             'basic_lvl': 6,
@@ -147,9 +148,27 @@ class Character:
 
     # Set relic substats for attackers
     def set_attack_relic_substats(self, fixed_attack: int=0, attack_rate: int=0, fixed_speed: int=0, crit_rate: int=0, crit_dmg: int=0):
-        self.basic_stats['fixed_attack'] += fixed_attack * 19
-        self.basic_stats['attack_rate'] += attack_rate * 3.89
-        self.basic_stats['fixed_speed'] += fixed_speed * 2.3
-        self.basic_stats['crit_rate'] += crit_rate * 2.92
-        self.basic_stats['crit_dmg'] += crit_dmg * 5.83
+        self.basic_stats['fixed_attack'] += fixed_attack * 21
+        self.basic_stats['attack_rate'] += attack_rate * 4.32
+        self.basic_stats['fixed_speed'] += fixed_speed * 2.6
+        self.basic_stats['crit_rate'] += crit_rate * 3.24
+        self.basic_stats['crit_dmg'] += crit_dmg * 6.48
         self.calc_stats()
+
+    def move(self, battle, target, ultimate = False):
+        # Start turn, calculating buffs and stats
+        battle_simulation.turn_start(self, ultimate)
+        self.start_of_turn(battle, target)
+        self.calc_stats()
+
+        # Move according to preset logic
+        if not ultimate:
+            result = self.move_logic(battle, target)
+        else:
+            result = self.ultimate_logic(battle, target)
+
+        # End turn
+        battle_simulation.turn_end(self,result[1], ultimate)
+        self.end_of_turn(battle, target)
+
+        return result[0]
