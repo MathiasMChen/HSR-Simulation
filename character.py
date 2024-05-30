@@ -14,6 +14,7 @@ class Seele(Character):
         self.basic_stats['base_speed'] += 115
         self.basic_stats['attack'] += 640
         self.basic_stats['speed'] += 115
+        self.info['dmg_type'] = 'quantum'
         
         # Base traces
         self.basic_stats['crit_dmg'] += 24
@@ -64,6 +65,10 @@ class Seele(Character):
         dmg_E = dmg * expectation(self)
         dmg_crit = dmg * crit(self)
 
+        # Do toughness damage
+        if self.info['dmg_type'] in target.basic_stats['weakness']:
+            target.basic_stats['toughness'] -= 30 * self.basic_stats['break_rate'] / 100
+
         # Calculate energy
         self.basic_stats['cur_energy'] += 20 * self.basic_stats['energy_regen_rate'] / 100
         
@@ -93,6 +98,10 @@ class Seele(Character):
         [dmg, applied_buffs] = damage(self, target, rate, extra_dmg_boost=self.basic_stats['skill_dmg'])
         dmg_E = dmg * expectation(self)
         dmg_crit = dmg * crit(self)
+        
+        # Do toughness damage
+        if self.info['dmg_type'] in target.basic_stats['weakness']:
+            target.basic_stats['toughness'] -= 60 * self.basic_stats['break_rate'] / 100
 
         # Calculate energy
         self.basic_stats['cur_energy'] += 30 * self.basic_stats['energy_regen_rate'] / 100
@@ -121,6 +130,10 @@ class Seele(Character):
         [dmg, applied_buffs] = damage(self, target, rate)
         dmg_E = dmg * expectation(self, conditional_crit_dmg=self.basic_stats['ultimate_crit_dmg'])
         dmg_crit = dmg * crit(self, conditional_crit_dmg=self.basic_stats['ultimate_crit_dmg'])
+
+        # Do toughness damage
+        if self.info['dmg_type'] in target.basic_stats['weakness']:
+            target.basic_stats['toughness'] -= 90 * self.basic_stats['break_rate'] / 100
 
         self.basic_stats['cur_energy'] = 5 * self.basic_stats['energy_regen_rate'] / 100
 

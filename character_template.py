@@ -15,6 +15,7 @@ class Character:
             'eidolon': eidolons,
             'lightcone': lightcone,
             'echo': r,
+            'dmg_type': None
         }
 
         # Initialize basic stats
@@ -29,7 +30,7 @@ class Character:
             'speed': 0,
             'crit_rate': 5,
             'crit_dmg': 50,
-            'break_effect': 100,
+            'break_effect': 0,
             'dmg_boost': 100,
             'effect_hit_rate': 0,
             'energy': 110,
@@ -48,6 +49,7 @@ class Character:
             'skill_crit_dmg': 0,
             'ultimate_crit_dmg': 0,
             'def_pen': 0,
+            'break_rate': 100
         }
 
         # Initial relic main stats data
@@ -162,11 +164,24 @@ class Character:
         self.start_of_turn(battle, target)
         self.calc_stats()
 
+        skip = False
+        if target.basic_stats['toughness'] <= 0:
+            skip = True
+
         # Move according to preset logic
         if not ultimate:
             result = self.move_logic(battle, target)
         else:
             result = self.ultimate_logic(battle, target)
+
+        print(result[0])
+
+        # If target toughness breaks    
+        if target.basic_stats['toughness'] <= 0 and not skip:
+            result_break = target.toughness_break(self)
+        
+            for i in range(len(result_break)):
+                result[0][i] += result_break[i]
 
         # End turn
         battle_simulation.turn_end(self,result[1], ultimate)
