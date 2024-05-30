@@ -22,7 +22,7 @@ Taking into account critical damage, we yield two more damage values: damage whe
 
 **Output: an array, the first number is raw damage, the second is the expectation of damage, and the third is critical damage.**
 
-For instance, if the raw damage is 10000, crit_rate is 80%, and crit_dmg is 200%, our expectation would be 10000 * (1 + 80% *200%) = 26000, and our critical damage would be 10000 * (1 + 200%) = 30000. Thus, our output is [10000, 26000, 30000]. Note that crit_rate exceeding 100% behaves the same as 100%, as both indicate there is 100% for the damage to be critical.
+For instance, if the raw damage is 10000, crit_rate is 80%, and crit_dmg is 200%, our expectation would be 10000 * (1 + 80% * 200%) = 26000, and our critical damage would be 10000 * (1 + 200%) = 30000. Thus, our output is [10000, 26000, 30000]. Note that crit_rate exceeding 100% behaves the same as 100%, as both indicate there is 100% for the damage to be critical.
 
 ***Outcome: Calculate team damage against an arbitrarily selected in-game boss during a given time length, counted in turn. The enemy does not take action during its turn, ensuring every member of the player's team does not die or take debuff, but the turn count will collapse for debuffs on the enemy.***
 
@@ -40,13 +40,13 @@ lightcones.py stores lightcone buffs.
 
 All files contain the minimal data needed to check program viability. (1 character, 2 sets of relics, 1 lightcone.)
 
-## STEP II: Connect these databases to form a character profile.
+## STEP II: Connect these databases to form a character profile
 
 Related files: character.py.
 
 character_template.py connects the four databases above to form a complete character.
 
-## STEP III: Create a battle simulation environment.
+## STEP III: Create a battle simulation environment
 
 Related file: battle_simulations.py
 
