@@ -41,18 +41,23 @@ class Battle():
                     skip = True
                     break
             if not skip:
+                for i in unitlist:
+                    if i.basic_stats['until_turn'] > 10000:
+                        raise ValueError("Until_turn exceeds 10000.") 
                 timestamp_collapse = min([i.basic_stats['until_turn']/i.basic_stats['speed'] for i in unitlist])
                 if self.timestamp < timestamp_collapse:
                     return dmg
                 for i in unitlist:
                     i.basic_stats['until_turn'] -= i.basic_stats['speed'] * timestamp_collapse
-                    unit_to_move = i
+                    if i.basic_stats['until_turn'] <= 2 * (10 ** -12):
+                        unit_to_move = i
                 damage = unit_to_move.move(self, target)
                 self.timestamp -= timestamp_collapse
             for i in range(len(dmg)):
                 dmg[i] += damage[i]
             target.basic_stats['remaining_hp'] -= damage[1]
-            print([math.floor(i) for i in dmg],math.floor(self.timestamp))
+            print([math.floor(i) for i in dmg])
+            print(math.floor(self.timestamp))
             if target.basic_stats['remaining_hp'] <= 0:
                 break
         return [math.floor(i) for i in dmg]

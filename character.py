@@ -1,7 +1,6 @@
 from character_template import Character
 import character_buffs
 from damage_calculation import damage, expectation, crit
-import battle_simulation
 
 class Seele(Character):        
     
@@ -76,10 +75,6 @@ class Seele(Character):
 
         # Reminder
         print('Seele casts skill!')
-
-        # Start turn, calculating buffs and stats
-        battle_simulation.turn_start(self)
-        self.calc_stats()
 
         # Add buffs
         seele_skill = self.dummy.skill(self)
