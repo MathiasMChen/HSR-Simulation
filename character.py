@@ -67,7 +67,7 @@ class Seele(Character):
         # Calculate energy
         self.basic_stats['cur_energy'] += 20 * self.basic_stats['energy_regen_rate'] / 100
         
-        self.basic_stats['until_turn'] -= 2000
+        self.basic_stats['until_turn'] -= 2000 # Trace 3
 
         return [[dmg, dmg_E, dmg_crit], applied_buffs]
     
@@ -125,10 +125,8 @@ class Seele(Character):
         self.basic_stats['cur_energy'] = 5 * self.basic_stats['energy_regen_rate'] / 100
 
         if self.info['eidolon'] >= 6: # Eidolon 6
-            target.on_hit['seele_eidolon_6'] = {'effect': self.eidolon_6, 'turn': 1}
-        # Taking into consideration only single enemy so no extra turn code
-        # Will add if considering multiple
+            target.on_hit['seele_eidolon_6'] = self.dummy.eidolon_6(self)
+        
         return [[dmg, dmg_E, dmg_crit], applied_buffs]
     
-    def eidolon_6(self, target) -> None:
-        return 15
+

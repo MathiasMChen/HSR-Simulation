@@ -47,10 +47,10 @@ def damage(self, target, dmg_rate, fixed_dmg = 0, extra_dmg_boost = 0, attribute
 
     return [dmg, applied_buffs]
     
-# Calculate damage expectation
+# Calculate damage expectation rate
 def expectation(self, conditional_rate = 0, conditional_crit_dmg = 0):
     return 1 + (self.basic_stats['crit_rate'] + conditional_rate) * (self.basic_stats['crit_dmg'] + conditional_crit_dmg) / 10000
 
-# Calculate crit damage
+# Calculate crit damage rate
 def crit(self, conditional_crit_dmg = 0):
     return 1 + (self.basic_stats['crit_dmg'] + conditional_crit_dmg) / 100

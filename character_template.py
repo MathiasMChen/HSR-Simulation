@@ -10,6 +10,7 @@ class Character:
         
         # Initialize basic info 
         self.info = {
+            'type': 'character',
             'name': name,
             'eidolon': eidolons,
             'lightcone': lightcone,
@@ -172,3 +173,4 @@ class Character:
         self.end_of_turn(battle, target)
 
         return result[0]
+    
