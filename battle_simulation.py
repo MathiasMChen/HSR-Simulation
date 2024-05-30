@@ -92,41 +92,38 @@ class Battle():
                 # Decrement time length
                 self.timestamp -= timestamp_collapse
 
-                # If the unit is enemy
-                if unit_to_move.info['type'] == 'enemy':
-                    unit_to_move.move()
-                    print(math.floor(self.timestamp))
-                    continue
-
                 # The unit with runway length 0 moves
                 damage = unit_to_move.move(self, target)
 
-            # Inflict target on-hit if deals damage
             if damage[0] != None:
-                for i in target.on_hit:
-                    if target.on_hit[i]['after']:
-                        target.on_hit[i]['after'] = False
-                        continue
-                    character = target.on_hit[i]['origin']
-                    damage0 = target.on_hit[i]['effect'](character, target)
-                    if damage0[0] != None:
-                        for i in range(len(dmg)):
-                            dmg[i] += damage0[0][i]
-                    if damage0[1] != []:
-                        for k in damage0[1]:
-                            for j in k['stats']:
-                                character.basic_stats[j] -= k['stats'][j] * k['stack']
-                        character.calc_stats()
+                
+                # Add damage of this turn to dmg
+                for i in range(len(dmg)):
+                    dmg[i] += damage[i]
+                
+                # Decrement target hp based on expected damage
+                target.basic_stats['remaining_hp'] -= damage[1]
 
-            # Add damage of this turn to dmg
-            for i in range(len(dmg)):
-                dmg[i] += damage[i]
-            
-            # Decrement target hp based on expected damage
-            target.basic_stats['remaining_hp'] -= damage[1]
+                if unit_to_move.info['type'] != 'enemy':
+                    # Inflict target on-hit if deals damage
+                    for i in target.on_hit:
+                        if target.on_hit[i]['after']:
+                            target.on_hit[i]['after'] = False
+                            continue
+                        character = target.on_hit[i]['origin']
+                        damage_on_hit = target.on_hit[i]['effect'](character, target)
+                        if damage_on_hit[0] != None:
+                            for i in range(len(dmg)):
+                                dmg[i] += damage_on_hit[0][i]
+                            target.basic_stats['remaining_hp'] -= damage_on_hit[0][1]
+                            print(damage_on_hit[0])
+                        if damage_on_hit[1] != []:
+                            for k in damage_on_hit[1]:
+                                for j in k['stats']:
+                                    character.basic_stats[j] -= k['stats'][j] * k['stack']
+                            character.calc_stats()
 
-            # Print damage and time left to console or notebook
-            print([math.floor(i) for i in dmg])
+            # Print time left to console or notebook
             print(math.floor(self.timestamp))
 
             # Break out if target is defeated

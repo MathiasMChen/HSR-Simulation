@@ -22,11 +22,11 @@ Taking into account critical damage, we yield two more damage values: damage whe
 
 **Output: an array, the first number is raw damage, the second is the expectation of damage, and the third is critical damage.**
 
-For instance, if the raw damage is 10000, crit_rate is 80%, and crit_dmg is 200%, our expectation would be 10000 * (1 + 80% * 200%) = 26000, and our critical damage would be 10000 * (1 + 200%) = 30000. Thus, our output is [10000, 26000, 30000]. Note that crit_rate exceeding 100% behaves the same as 100%, as both indicate there is 100% for the damage to be critical.
+For instance, if the raw damage is 10000, crit_rate is 80%, and crit_dmg is 200%, our expectation would be 10000 * (1 + 80% *200%) = 26000, and our critical damage would be 10000 * (1 + 200%) = 30000. Thus, our output is [10000, 26000, 30000]. Note that crit_rate exceeding 100% behaves the same as 100%, as both indicate there is 100% for the damage to be critical.
 
 ***Outcome: Calculate team damage against an arbitrarily selected in-game boss during a given time length, counted in turn. The enemy does not take action during its turn, ensuring every member of the player's team does not die or take debuff, but the turn count will collapse for debuffs on the enemy.***
 
-### STEP I: Build a foundation database logistics, including base stats and abilities of characters, lightcones, and relics.
+## STEP I: Build a foundation database logistics, including base stats and abilities of characters, lightcones, and relics
 
 Related files: character_buffs.py, character.py, relic.py, lightcones.py.
 
@@ -40,13 +40,13 @@ lightcones.py stores lightcone buffs.
 
 All files contain the minimal data needed to check program viability. (1 character, 2 sets of relics, 1 lightcone.)
 
-### STEP II: Connect these databases to form a character profile.
+## STEP II: Connect these databases to form a character profile.
 
 Related files: character.py.
 
 character_template.py connects the four databases above to form a complete character.
 
-### STEP III: Create a battle simulation environment.
+## STEP III: Create a battle simulation environment.
 
 Related file: battle_simulations.py
 
@@ -54,7 +54,7 @@ battle_simulations.py contains all the logistics needed for a battle to perform.
 
 **MILESTONE I: Calculate single character damage to a single target on a single hit with manual input (buffs from allies, status of enemy). Single timestamp.**
 
-### STEP IV: Create more methods in the battle simulation environment to allow time flow.
+## STEP IV: Create more methods in the battle simulation environment to allow time flow.
 
 Related file: battle_simulations.py
 
@@ -62,18 +62,18 @@ Related file: battle_simulations.py
 
 **MILESTONE II: Calculate single character damage to a single target in a time interval with manual input (buffs from allies, status of enemy). Taking into account energy.**
 
-### STEP V: Complete database
+## STEP V: Complete database
 
 Related files: character_buffs.py, relic.py, lightcones.py.
 
 Update these files with complete data from HSR.
 
-### STEP VI: Allows team build.
+## STEP VI: Allows team build
 
 **MILESTONE III: Calculate team damage to a single target in a time interval.**
 
-### STEP V: Build an enemy database.
+## STEP V: Build an enemy database
 
 **MILESTONE IV: Calculate team damage to any in-game enemy boss.**
 
-*More to be developed*
+### More to be developed
