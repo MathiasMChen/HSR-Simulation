@@ -1,6 +1,14 @@
+from randombool import rand
 # Calculate damage
-def damage(self, target, dmg_rate, fixed_dmg = 0, extra_dmg_boost = 0, attribute = 'attack') -> int:
+def damage(self, target, dmg_rate, type, fixed_dmg = 0, attribute = 'attack') -> int:
 
+    type_dct = {
+        'basic': [self.basic_stats['basic_dmg'], self.basic_stats['basic_crit_rate'], self.basic_stats['basic_crit_dmg']],
+        'skill': [self.basic_stats['skill_dmg'], self.basic_stats['skill_crit_rate'], self.basic_stats['skill_crit_dmg']],
+        'ultimate': [self.basic_stats['ultimate_dmg'], self.basic_stats['ultimate_crit_rate'], self.basic_stats['ultimate_crit_dmg']]
+    }
+
+    [extra_dmg_boost, conditional_critical_rate, conditional_critical_dmg] = type_dct[type]
     # Apply on-hit and conditional buffs
     applied_buffs = []
     for i in self.on_hit:
@@ -44,13 +52,19 @@ def damage(self, target, dmg_rate, fixed_dmg = 0, extra_dmg_boost = 0, attribute
     dmg *= res
     dmg *= (1 + target.basic_stats['dmg_taken'] / 100)
     dmg *= (1 - target.basic_stats['toughness_resist'] / 100)
+    dmg_exp = dmg * expectation(self, conditional_critical_rate, conditional_critical_dmg)
+    if rand(self.basic_stats['crit_rate']):
+        dmg *= crit(self, conditional_critical_dmg)
 
-    return [dmg, applied_buffs]
+    target.basic_stats['remaining_hp'] -= dmg
+    #print(f'Enemy Remaining HP: {target.basic_stats['remaining_hp']} / {target.basic_stats['max_hp']}')
+
+    return [applied_buffs, dmg_exp]
     
 # Calculate damage expectation rate
 def expectation(self, conditional_rate = 0, conditional_crit_dmg = 0):
-    return 1 + (self.basic_stats['crit_rate'] + conditional_rate) * (self.basic_stats['crit_dmg'] + conditional_crit_dmg) / 10000
+    return 1 + min((self.basic_stats['crit_rate'] + conditional_rate),100) * (self.basic_stats['crit_dmg'] + conditional_crit_dmg) / 10000
 
 # Calculate crit damage rate
-def crit(self, conditional_crit_dmg = 0):
+def crit(self, conditional_crit_dmg):
     return 1 + (self.basic_stats['crit_dmg'] + conditional_crit_dmg) / 100

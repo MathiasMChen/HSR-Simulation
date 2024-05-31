@@ -1,7 +1,7 @@
 from randombool import rand
 
 def break_overall(character, target):
-    print(f'{character.info['name']} breaks enemy\'s toughness!')
+    #print(f'{character.info['name']} breaks enemy\'s toughness!')
     target.basic_stats['recover'] += 1
     target.basic_stats['break'] = True
     target.basic_stats['toughness_resist'] = 0
@@ -16,7 +16,7 @@ def break_dmg(character, target):
     return dmg
 
 def break_recover(target):
-    print('Enemy recovers from break.')
+    #print('Enemy recovers from break.')
     target.basic_stats['break'] = False
     target.basic_stats['toughness_resist'] = 10
     target.basic_stats['toughness'] = target.basic_stats['max_toughness']
@@ -24,7 +24,7 @@ def break_recover(target):
 def quantum_break_helper(character, target):
     if target.dot['quantum_break']['stack'] < target.dot['quantum_break']['max_stack']:
         target.dot['quantum_break']['stack'] += 1
-    return [None, []]
+    return [None, 0]
 
 def quantum(character, target):
     break_overall(character,target)
@@ -47,4 +47,6 @@ def quantum(character, target):
             'after': True,
             'turn': 1
         }
-    return [instant_damage]*3
+    target.basic_stats['remaining_hp'] -= instant_damage
+    #print(f'Enemy Remaining HP: {target.basic_stats['remaining_hp']} / {target.basic_stats['max_hp']}')
+    return instant_damage

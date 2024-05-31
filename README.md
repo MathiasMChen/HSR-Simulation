@@ -1,5 +1,5 @@
 # HSR-Simulation
- 
+
 Contains simple Honkai: Star Rail battle simulations.
 
 Brief introduction:

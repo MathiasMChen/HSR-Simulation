@@ -57,14 +57,12 @@ class Seele(Character):
     def basic(self, target) -> int:
 
         # Reminder
-        print('Seele casts basic!')
+        #print('Seele casts basic!')
 
         # Do damage to Enemy
         rate = 40 + 10 * self.basic_stats['basic_lvl']
-        [dmg, applied_buffs] = damage(self, target, rate, extra_dmg_boost=self.basic_stats['basic_dmg'])
-        dmg_E = dmg * expectation(self)
-        dmg_crit = dmg * crit(self)
-
+        [applied_buffs, dmg_exp] = damage(self, target, rate, 'basic')
+        
         # Do toughness damage
         if self.info['dmg_type'] in target.basic_stats['weakness']:
             target.basic_stats['toughness'] -= 30 * self.basic_stats['break_rate'] / 100
@@ -74,12 +72,12 @@ class Seele(Character):
         
         self.basic_stats['until_turn'] -= 2000 # Trace 3
 
-        return [[dmg, dmg_E, dmg_crit], applied_buffs]
+        return [applied_buffs, dmg_exp]
     
     def skill(self, target) -> int:
 
         # Reminder
-        print('Seele casts skill!')
+        #print('Seele casts skill!')
 
         # Add buffs
         seele_skill = self.dummy.skill(self)
@@ -95,9 +93,7 @@ class Seele(Character):
         self.calc_stats()
         # Do damage to Enemy
         rate = 110 + 11 * self.basic_stats['skill_lvl']
-        [dmg, applied_buffs] = damage(self, target, rate, extra_dmg_boost=self.basic_stats['skill_dmg'])
-        dmg_E = dmg * expectation(self)
-        dmg_crit = dmg * crit(self)
+        [applied_buffs, dmg_exp] = damage(self, target, rate, 'skill')
         
         # Do toughness damage
         if self.info['dmg_type'] in target.basic_stats['weakness']:
@@ -105,8 +101,8 @@ class Seele(Character):
 
         # Calculate energy
         self.basic_stats['cur_energy'] += 30 * self.basic_stats['energy_regen_rate'] / 100
-
-        return [[dmg, dmg_E, dmg_crit], applied_buffs]
+        
+        return [applied_buffs, dmg_exp]
 
     def talent(self) -> None:
 
@@ -120,16 +116,14 @@ class Seele(Character):
     def ultimate(self, target) -> int:
         
         # Reminder
-        print('Seele casts ultimate!')
+        #print('Seele casts ultimate!')
 
         # Add buffs
         self.talent()
 
         # Do damage to Enemy
         rate = 255 + 17 * self.basic_stats['ultimate_lvl']
-        [dmg, applied_buffs] = damage(self, target, rate)
-        dmg_E = dmg * expectation(self, conditional_crit_dmg=self.basic_stats['ultimate_crit_dmg'])
-        dmg_crit = dmg * crit(self, conditional_crit_dmg=self.basic_stats['ultimate_crit_dmg'])
+        [applied_buffs, dmg_exp] = damage(self, target, rate, 'ultimate')
 
         # Do toughness damage
         if self.info['dmg_type'] in target.basic_stats['weakness']:
@@ -140,6 +134,6 @@ class Seele(Character):
         if self.info['eidolon'] >= 6: # Eidolon 6
             target.on_hit['seele_eidolon_6'] = self.dummy.eidolon_6(self)
         
-        return [[dmg, dmg_E, dmg_crit], applied_buffs]
+        return [applied_buffs, dmg_exp]
     
 

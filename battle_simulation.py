@@ -46,16 +46,20 @@ def turn_end(self, applied_buffs, ultimate = False):
 class Battle():
 
     # Initialize desired time length and skill point
-    def __init__(self, timestamp, sp=3) -> None:
+    def __init__(self, timestamp, unitlist: list, target, sp=3) -> None:
         self.timestamp = timestamp
         self.skill_point = sp
+        self.unitlist = unitlist
+        self.target = target
     
     # Repeatedly call move() in character until time collapsed or enemy defeated
-    def progress(self, unitlist: list, target):
+    def progress(self, unitlist: list = None, target = None):
+        unitlist = self.unitlist
+        target = self.target
 
-        # Store damage in the form of [base damage, expected damage, critical damage]
-        dmg = [0,0,0]
-
+        dmg_exp = 0
+        kill_time = -float('inf')
+        kill = False
         # While still time left
         while self.timestamp > 0:
 
@@ -66,7 +70,7 @@ class Battle():
 
                     # Unit i casts ultimate
                     unit_to_move = i
-                    damage = unit_to_move.move(self, target,True)
+                    damage_exp = unit_to_move.move(self, target,True)
                     skip = True
                     break
 
@@ -78,7 +82,7 @@ class Battle():
 
                 # If time exceeds remaining time, pop out
                 if self.timestamp < timestamp_collapse:
-                    return [math.floor(i) for i in dmg]
+                    break
                 
                 # Otherwise, every unit's runway is decremented
                 for i in unitlist:
@@ -93,16 +97,12 @@ class Battle():
                 self.timestamp -= timestamp_collapse
 
                 # The unit with runway length 0 moves
-                damage = unit_to_move.move(self, target)
+                damage_exp = unit_to_move.move(self, target)
 
-            if damage[0] != None:
+            if damage_exp:
                 
                 # Add damage of this turn to dmg
-                for i in range(len(dmg)):
-                    dmg[i] += damage[i]
-                
-                # Decrement target hp based on expected damage
-                target.basic_stats['remaining_hp'] -= damage[1]
+                dmg_exp += damage_exp
 
                 if unit_to_move.info['type'] != 'enemy':
                     # Inflict target on-hit if deals damage
@@ -112,22 +112,22 @@ class Battle():
                             continue
                         character = target.on_hit[i]['origin']
                         damage_on_hit = target.on_hit[i]['effect'](character, target)
-                        if damage_on_hit[0] != None:
-                            for i in range(len(dmg)):
-                                dmg[i] += damage_on_hit[0][i]
-                            target.basic_stats['remaining_hp'] -= damage_on_hit[0][1]
-                            print(damage_on_hit[0])
-                        if damage_on_hit[1] != []:
-                            for k in damage_on_hit[1]:
+                        if damage_on_hit[1]:
+                            dmg_exp += damage_on_hit[1]
+                        if damage_on_hit[0]:
+                            for k in damage_on_hit[0]:
                                 for j in k['stats']:
                                     character.basic_stats[j] -= k['stats'][j] * k['stack']
                             character.calc_stats()
 
             # Print time left to console or notebook
-            print(math.floor(self.timestamp))
+            #print(math.floor(self.timestamp))
 
-            # Break out if target is defeated
-            if target.basic_stats['remaining_hp'] <= 2 * (10 ** -12):
+            # Record timestamp if target is defeated
+            if not kill and target.basic_stats['remaining_hp'] <= 2 * (10 ** -12):
+                kill_time = self.timestamp
+                kill = True
                 break
-        return [math.floor(i) for i in dmg]
+                
+        return [dmg_exp, kill, kill_time]
 

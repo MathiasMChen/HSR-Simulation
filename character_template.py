@@ -45,6 +45,9 @@ class Character:
             'basic_dmg': 0,
             'skill_dmg': 0,
             'ultimate_dmg': 0,
+            'basic_crit_rate': 0,
+            'skill_crit_rate': 0,
+            'ultimate_crit_rate': 0,
             'basic_crit_dmg': 0,
             'skill_crit_dmg': 0,
             'ultimate_crit_dmg': 0,
@@ -174,18 +177,14 @@ class Character:
         else:
             result = self.ultimate_logic(battle, target)
 
-        print(result[0])
-
         # If target toughness breaks    
         if target.basic_stats['toughness'] <= 0 and not skip:
             result_break = target.toughness_break(self)
-        
-            for i in range(len(result_break)):
-                result[0][i] += result_break[i]
+            result[1] += result_break
 
         # End turn
-        battle_simulation.turn_end(self,result[1], ultimate)
+        battle_simulation.turn_end(self,result[0], ultimate)
         self.end_of_turn(battle, target)
 
-        return result[0]
+        return result[1]
     

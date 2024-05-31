@@ -7,15 +7,13 @@ class seele():
     def eidolon_6_helper(self, Seele, target):
 
         # Reminder
-        print('Seele E6 on-hit triggers!')
+        #print('Seele E6 on-hit triggers!')
 
         # Do damage to enemy
         rate = (255 + 17 * Seele.basic_stats['ultimate_lvl']) * 0.15
-        [dmg, applied_buffs] = damage(Seele, target, rate)
-        dmg_E = dmg * expectation(Seele, conditional_crit_dmg=Seele.basic_stats['ultimate_crit_dmg'])
-        dmg_crit = dmg * crit(Seele, conditional_crit_dmg=Seele.basic_stats['ultimate_crit_dmg'])
+        [applied_buffs, dmg_exp] = damage(Seele, target, rate, 'ultimate')
 
-        return [[dmg, dmg_E, dmg_crit], applied_buffs]
+        return [applied_buffs, dmg_exp]
 
     def eidolon_1(self):
         return  {

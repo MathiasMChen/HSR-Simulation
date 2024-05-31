@@ -9,8 +9,8 @@ class Enemy:
         self.dot = {}
         self.on_hit = {}
         self.basic_stats = {
-            'remaining_hp': 250000,
-            'max_hp': 250000,
+            'remaining_hp': 150000,
+            'max_hp': 150000,
             'res': 0,
             'def_red': 0,
             'dmg_taken': 0,
@@ -26,7 +26,7 @@ class Enemy:
             'break': False
         }
     def move(character, battle, self):
-        print('Enemy moves.')
+        #print('Enemy moves.')
         
         dmg = 0
         dot_lst = list(self.dot.keys())
@@ -54,10 +54,12 @@ class Enemy:
             self.basic_stats['recover'] -= 1
         if self.basic_stats['recover'] == 0 and self.basic_stats['break']:
             break_effects.break_recover(self)
-        self.basic_stats['until_turn'] += 10000
         if dmg > 0:
-            print([dmg])
-        return [dmg]*3
+            self.basic_stats['remaining_hp'] -= dmg
+            #print('Enemy suffers dot damage.')
+            #print(f'Enemy Remaining HP: {self.basic_stats['remaining_hp']} / {self.basic_stats['max_hp']}')
+        self.basic_stats['until_turn'] += 10000
+        return dmg
 
     def toughness_break(self, character):
         result = break_effects.quantum(character, self)
