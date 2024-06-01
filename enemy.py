@@ -9,8 +9,8 @@ class Enemy:
         self.dot = {}
         self.on_hit = {}
         self.basic_stats = {
-            'remaining_hp': 150000,
-            'max_hp': 150000,
+            'remaining_hp': 200000,
+            'max_hp': 200000,
             'res': 0,
             'def_red': 0,
             'dmg_taken': 0,
@@ -31,7 +31,7 @@ class Enemy:
         dmg = 0
         dot_lst = list(self.dot.keys())
         for i in dot_lst:
-            dmg += self.dot[i]['damage'](self.dot[i]['origin'], self) * self.dot[i]['stack']
+            dmg += self.dot[i]['damage'](self.dot[i]['origin'], self) * self.dot[i]['stack'] * self.dot[i]['ratio']
             if self.dot[i]['turn'] == 1:
                 self.dot.pop(i)
             else:

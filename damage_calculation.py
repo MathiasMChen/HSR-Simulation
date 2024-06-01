@@ -1,32 +1,29 @@
 from randombool import rand
+from enemy import Enemy
+
 # Calculate damage
-def damage(self, target, dmg_rate, type, fixed_dmg = 0, attribute = 'attack') -> int:
+def damage(self, target: Enemy, dmg_rate: float, type: str, fixed_dmg: int = 0, attribute: str = 'attack') -> int:
 
-    type_dct = {
-        'basic': [self.basic_stats['basic_dmg'], self.basic_stats['basic_crit_rate'], self.basic_stats['basic_crit_dmg']],
-        'skill': [self.basic_stats['skill_dmg'], self.basic_stats['skill_crit_rate'], self.basic_stats['skill_crit_dmg']],
-        'ultimate': [self.basic_stats['ultimate_dmg'], self.basic_stats['ultimate_crit_rate'], self.basic_stats['ultimate_crit_dmg']]
-    }
-
-    [extra_dmg_boost, conditional_critical_rate, conditional_critical_dmg] = type_dct[type]
     # Apply on-hit and conditional buffs
     applied_buffs = []
-    for i in self.on_hit:
-        k = self.on_hit[i]
+    for i in self.buffs['on_hit']:
+        k = self.buffs['on_hit'][i]
         if k['condition'](target):
             for j in k['stats']:
                 self.basic_stats[j] += k['stats'][j] * k['stack']
             if k['turn'] > 0:
-                if k['name'] in self.buffs:
+                if k['name'] in self.buffs[k['buff_type']]:
                     self.buffs[k['name']]['turn'] = k['turn']
                 else:
                     k.pop('condition')
-                    self.buffs[k['name']] = k
+                    k['type'] = k['buff_type']
+                    k.pop('buff_type')
+                    self.buffs['buff'][k['name']] = k
             else:
                 applied_buffs.append(k)
 
-    for i in self.conditional_buffs:
-        p = self.conditional_buffs[i]
+    for i in self.buffs['conditional']:
+        p = self.buffs['conditional'][i]
         if p['condition'](self):
             for m in p['stats']:
                 self.basic_stats[m] += p['stats'][m] * p['stack']
@@ -37,7 +34,15 @@ def damage(self, target, dmg_rate, type, fixed_dmg = 0, attribute = 'attack') ->
                     applied_buffs.append(p)
             elif p['turn'] > self.buffs[p['name']]['turn']:
                 self.buffs[p['name']]['turn'] = p['turn']
-    self.calc_stats()
+    self.calc_stats()    
+    
+    type_dct = {
+        'basic': [self.basic_stats['basic_dmg'], self.basic_stats['basic_crit_rate'], self.basic_stats['basic_crit_dmg']],
+        'skill': [self.basic_stats['skill_dmg'], self.basic_stats['skill_crit_rate'], self.basic_stats['skill_crit_dmg']],
+        'ultimate': [self.basic_stats['ultimate_dmg'], self.basic_stats['ultimate_crit_rate'], self.basic_stats['ultimate_crit_dmg']]
+    } 
+
+    [extra_dmg_boost, conditional_critical_rate, conditional_critical_dmg] = type_dct[type]
 
     # Calculate damage
     dmg = dmg_rate / 100 * self.basic_stats[attribute] + fixed_dmg
@@ -54,17 +59,28 @@ def damage(self, target, dmg_rate, type, fixed_dmg = 0, attribute = 'attack') ->
     dmg *= (1 - target.basic_stats['toughness_resist'] / 100)
     dmg_exp = dmg * expectation(self, conditional_critical_rate, conditional_critical_dmg)
     if rand(self.basic_stats['crit_rate']):
+        #print(f'Critical hit with {round(self.basic_stats['crit_rate'],1)}% chance!')
         dmg *= crit(self, conditional_critical_dmg)
+    else:
+        dmg *= 1
+        #print(f'Critical hit failed with {round(self.basic_stats['crit_rate'],1)}% chance!')
+
+    
 
     target.basic_stats['remaining_hp'] -= dmg
-    #print(f'Enemy Remaining HP: {target.basic_stats['remaining_hp']} / {target.basic_stats['max_hp']}')
+    #print(f'Enemy Remaining HP: {target.basic_stats['remaining_hp']} / {target.basic_stats['max_hp']}')     
+    
+    # Remove one-time on-hit and conditional buffs
+    for i in applied_buffs:
+        for j in i['stats']:
+            self.basic_stats[j] -= i['stats'][j] * i['stack']
 
-    return [applied_buffs, dmg_exp]
+    return dmg_exp
     
 # Calculate damage expectation rate
-def expectation(self, conditional_rate = 0, conditional_crit_dmg = 0):
+def expectation(self, conditional_rate: float = 0, conditional_crit_dmg: float = 0):
     return 1 + min((self.basic_stats['crit_rate'] + conditional_rate),100) * (self.basic_stats['crit_dmg'] + conditional_crit_dmg) / 10000
 
 # Calculate crit damage rate
-def crit(self, conditional_crit_dmg):
+def crit(self, conditional_crit_dmg: float):
     return 1 + (self.basic_stats['crit_dmg'] + conditional_crit_dmg) / 100

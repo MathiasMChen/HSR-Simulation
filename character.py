@@ -1,12 +1,13 @@
 from character_template import Character
 import character_buffs
-from damage_calculation import damage, expectation, crit
+from damage_calculation import damage
+from enemy import Enemy
 
 class Seele(Character):        
     
-    dummy = character_buffs.seele()
+    dummy = character_buffs.seele_buffs()
     
-    def __init__(self, eidolons: int, lightcone: str, r: int, relic1, relic2, planar) -> None:
+    def __init__(self, eidolons: int=0, lightcone: str='in_the_night', r: int=1, relic1: str='genius', relic2: str='genius', planar: str='arena') -> None:
         super().__init__('Seele', eidolons, lightcone, r)
 
         # Base stats
@@ -25,7 +26,7 @@ class Seele(Character):
 
         # Eidolons
         if eidolons >= 1: # Eidolon 1
-            self.on_hit['eidolon_1'] = self.dummy.eidolon_1()
+            self.buffs['on_hit']['eidolon_1'] = self.dummy.eidolon_1()
             if eidolons >= 3: # Eidolon 3
                 self.basic_stats['skill_lvl'] += 2
                 self.basic_stats['talent_lvl'] += 2
@@ -33,35 +34,34 @@ class Seele(Character):
                     self.basic_stats['ultimate_lvl'] += 2
                     self.basic_stats['basic_lvl'] += 1
 
-    def move_logic(self, battle, target):
+    def move_logic(self, battle, target: Enemy) -> list:
         if battle.skill_point >= 1:
             battle.skill_point -= 1
-            result = self.skill(target)
+            return self.skill(target)
         else:
             battle.skill_point += 1
-            result = self.basic(target)
-        return result
+            return self.basic(target)
     
-    def ultimate_ready(self):
+    def ultimate_ready(self) -> bool:
         return self.basic_stats['cur_energy'] >= self.basic_stats['energy']
 
-    def ultimate_logic(self, battle, target):
+    def ultimate_logic(self, battle, target: Enemy) -> list:
         return self.ultimate(target)
     
-    def start_of_turn(self, battle, target):
+    def start_of_turn(self, battle, target: Enemy) -> None:
         return
     
-    def end_of_turn(self, battle, target):
+    def end_of_turn(self, battle, target: Enemy) -> None:
         return
 
-    def basic(self, target) -> int:
+    def basic(self, target: Enemy) -> float:
 
         # Reminder
         #print('Seele casts basic!')
 
         # Do damage to Enemy
         rate = 40 + 10 * self.basic_stats['basic_lvl']
-        [applied_buffs, dmg_exp] = damage(self, target, rate, 'basic')
+        dmg_exp = damage(self, target, rate, 'basic')
         
         # Do toughness damage
         if self.info['dmg_type'] in target.basic_stats['weakness']:
@@ -72,28 +72,29 @@ class Seele(Character):
         
         self.basic_stats['until_turn'] -= 2000 # Trace 3
 
-        return [applied_buffs, dmg_exp]
+        return dmg_exp
     
-    def skill(self, target) -> int:
+    def skill(self, target: Enemy) -> float:
 
         # Reminder
         #print('Seele casts skill!')
 
         # Add buffs
         seele_skill = self.dummy.skill(self)
-        if 'seele_skill' not in self.buffs:
-            self.buffs['seele_skill'] = seele_skill
+        type = seele_skill['type']
+        if 'seele_skill' not in self.buffs[type]:
+            self.buffs[type]['seele_skill'] = seele_skill
             for i in seele_skill['stats']:
                 self.basic_stats[i] += seele_skill['stats'][i] * seele_skill['stack']
         else:
-            self.buffs['seele_skill']['turn'] = self.buffs['seele_skill']['max_turn']
-            if self.buffs['seele_skill']['stack'] < self.buffs['seele_skill']['max_stack']:
-                self.buffs['seele_skill']['stack'] += 1
+            self.buffs[type]['seele_skill']['turn'] = self.buffs[type]['seele_skill']['max_turn']
+            if self.buffs[type]['seele_skill']['stack'] < self.buffs[type]['seele_skill']['max_stack']:
+                self.buffs[type]['seele_skill']['stack'] += 1
                 self.basic_stats['speed_rate'] += 25
         self.calc_stats()
         # Do damage to Enemy
         rate = 110 + 11 * self.basic_stats['skill_lvl']
-        [applied_buffs, dmg_exp] = damage(self, target, rate, 'skill')
+        dmg_exp = damage(self, target, rate, 'skill')
         
         # Do toughness damage
         if self.info['dmg_type'] in target.basic_stats['weakness']:
@@ -102,18 +103,19 @@ class Seele(Character):
         # Calculate energy
         self.basic_stats['cur_energy'] += 30 * self.basic_stats['energy_regen_rate'] / 100
         
-        return [applied_buffs, dmg_exp]
+        return dmg_exp
 
     def talent(self) -> None:
 
         # Add buffs
         seele_talent = self.dummy.talent(self)
-        if 'seele_talent' not in self.buffs:
-            self.buffs['seele_talent'] = seele_talent
+        type = seele_talent['type']
+        if 'seele_talent' not in self.buffs[type]:
+            self.buffs[type]['seele_talent'] = seele_talent
             for i in seele_talent['stats']:
                 self.basic_stats[i] += seele_talent['stats'][i] * seele_talent['stack']
 
-    def ultimate(self, target) -> int:
+    def ultimate(self, target: Enemy) -> float:
         
         # Reminder
         #print('Seele casts ultimate!')
@@ -123,7 +125,7 @@ class Seele(Character):
 
         # Do damage to Enemy
         rate = 255 + 17 * self.basic_stats['ultimate_lvl']
-        [applied_buffs, dmg_exp] = damage(self, target, rate, 'ultimate')
+        dmg_exp = damage(self, target, rate, 'ultimate')
 
         # Do toughness damage
         if self.info['dmg_type'] in target.basic_stats['weakness']:
@@ -134,6 +136,6 @@ class Seele(Character):
         if self.info['eidolon'] >= 6: # Eidolon 6
             target.on_hit['seele_eidolon_6'] = self.dummy.eidolon_6(self)
         
-        return [applied_buffs, dmg_exp]
+        return dmg_exp
     
 

@@ -1,65 +1,32 @@
 import math
 
-# Start of turn, decrement remaining buff durations by 1 and remove any expired buffs
-def turn_start(self, ultimate = False):
-    # Skip if the turn is an ultimate turn
-    if ultimate:
-        return
-    
-    # Iterate over all existing buffs that decrements start of turn
-    buffs = list(self.buffs.keys())
-    for i in buffs:
-        if self.buffs[i]['decrement'] == 'end_turn':
-            continue
-        if self.buffs[i]['turn'] == 1:
-            for j in self.buffs[i]['stats']:
-                self.basic_stats[j] -= self.buffs[i]['stats'][j] * self.buffs[i]['stack']
-            self.buffs.pop(i)
-        else:
-            self.buffs[i]['turn'] -= 1
-
-# End of turn
-def turn_end(self, applied_buffs, ultimate = False):
-
-    # Reset runway length if not ultimate
-    if not ultimate:
-        self.basic_stats['until_turn'] += 10000
-    
-    # Iterate over all existing buffs that decrements end of turn
-    buffs = list(self.buffs.keys())
-    for i in buffs:
-        if self.buffs[i]['decrement'] == 'start_turn':
-            continue
-        if self.buffs[i]['turn'] == 1:
-            for j in self.buffs[i]['stats']:
-                self.basic_stats[j] -= self.buffs[i]['stats'][j] * self.buffs[i]['stack']
-            self.buffs.pop(i)
-        else:
-            self.buffs[i]['turn'] -= 1
-    
-    # Remove one-time on-hit and conditional buffs
-    for i in applied_buffs:
-        for j in i['stats']:
-            self.basic_stats[j] -= i['stats'][j] * i['stack']
-    self.calc_stats()
+from character_template import Character
+from enemy import Enemy
 
 class Battle():
 
-    # Initialize desired time length and skill point
-    def __init__(self, timestamp, unitlist: list, target, sp=3) -> None:
+    # Initialize time length, moving unit list, target enemy, and initial skill point
+    def __init__(self, timestamp: float, unitlist: list[Character], target: Enemy, sp: int=3) -> None:
         self.timestamp = timestamp
         self.skill_point = sp
+        unitlist.append(target)
         self.unitlist = unitlist
         self.target = target
     
-    # Repeatedly call move() in character until time collapsed or enemy defeated
-    def progress(self, unitlist: list = None, target = None):
+    # Simulate battle progress with given initialization.
+    # Output: a list: 
+    #   The element at index 0 is the expected total damagedealt.                                       Type: float.
+    #   The element at index 1 indicates whether the target is defeated.                                Type: bool.
+    #   The element at index 2 indicates the time left when target is defeated. -inf if not defeated.   Type: float.
+    def progress(self, unitlist: list = None, target: Enemy = None) -> list:
         unitlist = self.unitlist
         target = self.target
 
-        dmg_exp = 0
-        kill_time = -float('inf')
-        kill = False
+        # Initialize output
+        dmg_exp = 0 # Expected damage
+        kill_time = -float('inf')   # Time remaining when enemy is defeated
+        kill = False    # Index indicating enemy is defeated or not
+
         # While still time left
         while self.timestamp > 0:
 
@@ -99,35 +66,89 @@ class Battle():
                 # The unit with runway length 0 moves
                 damage_exp = unit_to_move.move(self, target)
 
+            # If the move deals damage
             if damage_exp:
                 
-                # Add damage of this turn to dmg
+                # Add damage of this turn to dmg_exp
                 dmg_exp += damage_exp
 
+                # If a character deals damage to the enemy
                 if unit_to_move.info['type'] != 'enemy':
-                    # Inflict target on-hit if deals damage
+
+                    # Trigger enemy on-hit
                     for i in target.on_hit:
+
+                        # Some skills adding on-hit effects do not inflict the effects themselves. Skip the effect if this is the case.
                         if target.on_hit[i]['after']:
                             target.on_hit[i]['after'] = False
                             continue
+
+                        # Get origin character information
                         character = target.on_hit[i]['origin']
+
+                        # Calculate
                         damage_on_hit = target.on_hit[i]['effect'](character, target)
-                        if damage_on_hit[1]:
-                            dmg_exp += damage_on_hit[1]
-                        if damage_on_hit[0]:
-                            for k in damage_on_hit[0]:
-                                for j in k['stats']:
-                                    character.basic_stats[j] -= k['stats'][j] * k['stack']
-                            character.calc_stats()
+
+                        # If the on-hit effect deals damage
+                        if damage_on_hit:
+
+                            # Add damage of the effect to dmg_exp
+                            dmg_exp += damage_on_hit
 
             # Print time left to console or notebook
-            #print(math.floor(self.timestamp))
+            #print(f'Remaining time: {math.floor(self.timestamp)}\n')
 
             # Record timestamp if target is defeated
             if not kill and target.basic_stats['remaining_hp'] <= 2 * (10 ** -12):
-                kill_time = self.timestamp
+                kill_time = math.floor(self.timestamp)
                 kill = True
                 break
+        dmg_exp = math.floor(dmg_exp)
                 
         return [dmg_exp, kill, kill_time]
 
+    # Start of turn
+    def turn_start(self, char: Character, ultimate: bool = False) -> None:
+
+        # Skip if the turn is an ultimate turn
+        if ultimate:
+            return
+        
+        # Iterate over all existing buffs that decrements start of turn, and remove expired buffs (remaining turn = 0)
+        for i in ['buff','refreshing']:
+            buffs = list(char.buffs[i].keys())
+            for j in buffs:
+                if char.buffs[i][j]['turn'] == float('inf') or char.buffs[i][j]['decrement'] != 'start_turn':
+                    continue
+                if char.buffs[i][j]['turn'] == 1:
+                    for k in char.buffs[i][j]['stats']:
+                        char.basic_stats[k] -= char.buffs[i][j]['stats'][k] * char.buffs[i][j]['stack']
+                    char.buffs[i].pop(j)
+                else:
+                    char.buffs[i][j]['turn'] -= 1
+        
+        char.calc_stats()
+
+    # End of turn
+    def turn_end(self, char: Character, ultimate: bool = False) -> None:
+
+        # Skip if the turn is an ultimate turn
+        if ultimate:
+            return
+        
+        # Reset runway length
+        char.basic_stats['until_turn'] += 10000
+        # Iterate over all existing buffs that decrements end of turn, and remove expired buffs (remaining turn = 0)
+        for i in ['buff','refreshing']:
+            buffs = list(char.buffs[i].keys())
+            for j in buffs:
+                if char.buffs[i][j]['turn'] == float('inf') or char.buffs[i][j]['decrement'] != 'end_turn':
+                    continue
+                if char.buffs[i][j]['turn'] == 1:
+                    for k in char.buffs[i][j]['stats']:
+                        char.basic_stats[k] -= char.buffs[i][j]['stats'][k] * char.buffs[i][j]['stack']
+                    char.buffs[i].pop(j)
+                else:
+                    char.buffs[i][j]['turn'] -= 1
+
+        char.calc_stats()
